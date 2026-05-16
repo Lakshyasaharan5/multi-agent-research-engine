@@ -1,0 +1,1 @@
+// Checks query if it is safe to proceed
