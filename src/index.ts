@@ -1,1 +1,3 @@
-console.log("multi-agent-research-engine");
+import { runResearchEngine } from "./engine/runResearchEngine";
+
+runResearchEngine();

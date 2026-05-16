@@ -1,1 +1,5 @@
-// Checks query if it is safe to proceed
+export async function runSafetyAgent(userQuery: string) {
+  return {
+    result: "safe",
+  };
+}
