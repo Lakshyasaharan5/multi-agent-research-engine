@@ -1,0 +1,30 @@
+{
+  "name": "multi-agent-research-engine",
+  "version": "1.0.0",
+  "description": "Multi agent orchestration for research and report",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --watch src --ext ts --exec 'tsx src/index.ts'",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lakshyasaharan5/multi-agent-research-engine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Lakshyasaharan5/multi-agent-research-engine/issues"
+  },
+  "homepage": "https://github.com/Lakshyasaharan5/multi-agent-research-engine#readme",
+  "devDependencies": {
+    "@types/node": "^25.8.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3"
+  }
+}
