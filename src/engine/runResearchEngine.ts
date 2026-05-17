@@ -8,13 +8,13 @@ export async function runResearchEngine() {
     console.log(safetyResult);
 
     const plannerResult = await runPlannerAgent(safetyResult.result);
-    console.log(plannerResult);
+    // console.log(plannerResult);
 
     const researchResult = await runResearchAgent(plannerResult.tasks);
-    console.log(researchResult);
+    // console.log(researchResult);
 
     const reportResult = await runReportAgent(researchResult.findings);
-    console.log(reportResult);
+    // console.log(reportResult);
 }
 
 
