@@ -40,5 +40,5 @@ export function safetyPrompt(userQuery: string): string {
         <userQuery>
             ${userQuery}
         </userQuery>
-        </system>`;
+    </system>`;
 }

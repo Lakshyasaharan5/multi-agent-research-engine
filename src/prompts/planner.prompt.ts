@@ -31,5 +31,5 @@ export function plannerPrompt(input: {
         <userQuery>
             ${input.cleanedQuery}
         </userQuery>
-        </system>`;
+    </system>`;
 }
