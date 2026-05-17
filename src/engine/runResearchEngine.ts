@@ -11,8 +11,8 @@ export async function runResearchEngine() {
     console.log("Planner Result:", plannerResult);
 
     const researchResult = await runResearchAgent(plannerResult.tasks);
-    console.log("Research Result:", researchResult);
-
+    console.log("Research Result:", JSON.stringify(researchResult, null, 2));
+    
     // const reportResult = await runReportAgent(researchResult.findings);
     // console.log(reportResult);
 }

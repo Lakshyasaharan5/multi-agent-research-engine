@@ -1,0 +1,134 @@
+{
+  "findings": [
+    {
+      "task": "Identify the key components of the Vercel AI SDK relevant to agent development (e.g., streaming, tool/function calling, state management, providers) and summarize how they fit together.",
+      "answer": "The Vercel AI SDK components that matter for agent development fit into a common loop: (1) a **model/provider layer** chooses where generation comes from, (2) a **server-side generation layer** (e.g., `generateText` / `streamText`) produces model output as either plain text or a UI/stream protocol, (3) a **tool/function calling layer** lets the model request tool invocations that are executed and then fed back into the model, and (4) a **UI/state layer** on the client keeps the chat UX synchronized with streamed deltas and tool-call events.\n\nConcretely, for building agent experiences:\n- **Providers / model adapters**: The SDK abstracts multiple LLM vendors behind a unified API, so you configure the “model” once (or swap providers) while keeping the rest of the agent logic stable. This is exposed in the core APIs by passing a configured provider/model into generation calls. ([github.com](https://github.com/vercel/ai?utm_source=openai))\n- **Streaming**: Server routes can stream partial output to the browser using the SDK’s streaming primitives (e.g., `streamText`). This is what makes “think → act → repeat” feel responsive, since tool calls and intermediate steps can be surfaced as the model progresses. ([vercel.com](https://vercel.com/docs/functions/streaming/streaming-examples?utm_source=openai))\n- **Tool/function calling + automatic roundtrips**: The SDK’s tool calling integration can orchestrate multiple tool invocations by repeatedly calling the model, executing tools, and forwarding tool results until the model is ready to produce a final answer. Vercel’s “roundtrips” template is a practical reference for this. ([vercel.com](https://vercel.com/templates/ai/ai-sdk-roundtrips?utm_source=openai))\n- **Agent loop abstraction**: For multi-step tool-use agents, the SDK exposes an agent construct such as `ToolLoopAgent`, which encapsulates the looping behavior (invoke tools, return results, continue) behind a simpler interface than writing the loop manually. ([v6.ai-sdk.dev](https://v6.ai-sdk.dev/docs/reference/ai-sdk-core/tool-loop-agent?utm_source=openai))\n- **Client-side state management / UI protocol**: On the frontend, hooks like `useChat` (or other UI adapters) consume the SDK’s streaming protocol and maintain conversation state (messages, tool events, streamed text). The UI protocol is designed so the backend can stream structured UI/message updates reliably to the client. ([v4.ai-sdk.dev](https://v4.ai-sdk.dev/docs/ai-sdk-ui/stream-protocol?utm_source=openai))\n\nPut together: you implement an API route that uses the SDK’s **generation + tool loop** capabilities (with your chosen **provider/model**) and returns a streaming response in the SDK’s UI protocol; then the client uses the corresponding **UI hook** to maintain chat state while rendering streaming text and tool-related updates as they arrive.",
+      "sources": [
+        {
+          "title": "GitHub - vercel/ai (AI SDK repository)",
+          "url": "https://github.com/vercel/ai",
+          "relevance": "Primary/authoritative overview of core concepts and APIs."
+        },
+        {
+          "title": "AI SDK UI: Stream Protocols (v4 AI SDK UI docs)",
+          "url": "https://v4.ai-sdk.dev/docs/ai-sdk-ui/stream-protocol",
+          "relevance": "Explains the mechanism that ties backend streaming to frontend state/UI."
+        },
+        {
+          "title": "Automatic Tool Call Roundtrips with Vercel AI SDK (template)",
+          "url": "https://vercel.com/templates/ai/ai-sdk-roundtrips",
+          "relevance": "Concrete example of tool/function calling roundtrips used in agent flows."
+        },
+        {
+          "title": "AI SDK Core: ToolLoopAgent (reference)",
+          "url": "https://v6.ai-sdk.dev/docs/reference/ai-sdk-core/tool-loop-agent",
+          "relevance": "Defines the core agent looping abstraction for tool use."
+        }
+      ]
+    },
+    {
+      "task": "Design a step-by-step beginner-to-intermediate learning curriculum with progressively more complex agent examples (chat agent, tool-using agent, multi-step workflow agent).",
+      "answer": "A practical curriculum is to progress along three increasing axes: (A) **UI + streaming chat**, (B) **tool calling for single-step or few-step actions**, and (C) **multi-step orchestration with durability/Workflow patterns**.\n\nStep 1 (Beginner): Chat agent with streaming (no tools)\n- Goal: render streaming assistant output and keep message history.\n- Build: a Next.js route handler that uses the SDK’s streaming generation to return an SDK UI stream, plus a client chat UI that consumes it.\n- Example outcome: a “helpful assistant” that streams tokens as the response is generated.\n- Milestone: you can trace how a request becomes a streamed UI update end-to-end. ([vercel.com](https://vercel.com/docs/functions/streaming/streaming-examples?utm_source=openai))\n\nStep 2 (Beginner → Intermediate): Tool-using agent (1 tool type)\n- Goal: let the model call a function (tool) and incorporate the result.\n- Build: add a tool definition (with input schema) and implement tool execution on the server; configure the SDK so tool calls are executed and results are fed back into generation automatically.\n- Example outcome: “weather agent” or “knowledge lookup agent” where tool calls happen when the user asks for facts.\n- Milestone: you understand tool registration, typed inputs (e.g., via Zod), and tool result forwarding. ([vercel.com](https://vercel.com/academy/ai-sdk/tool-use?utm_source=openai))\n\nStep 3 (Intermediate): Multi-step workflow agent (tool chaining)\n- Goal: support sequences where the agent must call multiple tools in order (or loop until done).\n- Build options:\n  - Use the SDK’s **agent loop abstraction** (e.g., `ToolLoopAgent`) for iterative tool calling.\n  - Then evolve it into a pattern that can grow beyond a single request/response by adopting a durable multi-step approach (e.g., Vercel Workflow-backed templates) when appropriate.\n- Example outcome: “filesystem/knowledge agent” that searches locally or across a knowledge base with multiple tool actions before writing a final answer.\n- Milestone: you can implement “think → act → repeat” and explain how termination/max steps/retries work in your design. ([vercel.com](https://vercel.com/academy/filesystem-agents/agent-skeleton?utm_source=openai))\n\nStep 4 (Intermediate → Capstone): Generative UI + multi-step tool results as UI components\n- Goal: move beyond plain text and render tool outputs as structured UI (cards, summaries, actions).\n- Build: use the SDK’s multi-step + UI streaming approach so tool results are reflected in the frontend as typed/structured message parts.\n- Example outcome: a search/tool agent whose results appear as rich components while the model continues working.\n- Milestone: you can map tool outputs to UI message parts and ensure the protocol stays consistent. ([vercel.com](https://vercel.com/academy/ai-sdk/multi-step-and-generative-ui?utm_source=openai))",
+      "sources": [
+        {
+          "title": "Vercel Streaming Examples (recommends using Vercel AI SDK to stream from LLMs)",
+          "url": "https://vercel.com/docs/functions/streaming/streaming-examples",
+          "relevance": "Authority for streaming guidance and rationale."
+        },
+        {
+          "title": "Vercel Academy: Tool Use (Next.js tool calling lesson)",
+          "url": "https://vercel.com/academy/ai-sdk/tool-use",
+          "relevance": "Guides adding tools and shows how tool calls get triggered/handled."
+        },
+        {
+          "title": "Agent Skeleton (Vercel Academy; ToolLoopAgent and loop behavior)",
+          "url": "https://vercel.com/academy/filesystem-agents/agent-skeleton",
+          "relevance": "Concrete scaffold for multi-step agent looping with tool calls."
+        },
+        {
+          "title": "Multi-Step & Generative UI (Vercel Academy)",
+          "url": "https://vercel.com/academy/ai-sdk/multi-step-and-generative-ui",
+          "relevance": "Directly supports curriculum step about chaining + rich UI rendering."
+        }
+      ]
+    },
+    {
+      "task": "Find and evaluate the best official Vercel AI SDK documentation, examples, and starter templates, and map each resource to specific learning milestones.",
+      "answer": "Best “official-first” learning resources from Vercel break down cleanly by milestone:\n\nMilestone 1: Streaming chat UX (beginner)\n- Resource: Vercel AI SDK course/workshop entry point: **“Builders Guide to the AI SDK | Vercel Academy”**.\n- Why it fits: establishes the current SDK patterns and foundations before agent complexity.\n- Outcome: you can build a streaming chat endpoint and connect it to a frontend UI. ([vercel.com](https://vercel.com/academy/ai-sdk?utm_source=openai))\n\nMilestone 2: Tool calling (tool-using agent) (beginner → intermediate)\n- Resource: **“Tool Use | Vercel Academy”**.\n- Why it fits: focuses specifically on tool wiring (tool definitions + route handler behavior + tool-result roundtrips) which is the core of tool-using agents.\n- Outcome: you can implement tool definitions with schemas and observe how tool calls are decided and executed. ([examples.vercel.com](https://examples.vercel.com/academy/ai-sdk/tool-use?utm_source=openai))\n\nMilestone 3: Multi-step tool chaining (multi-step workflow agent) (intermediate)\n- Resource A: **“Agent Skeleton | Vercel Academy”** (uses `ToolLoopAgent`).\n- Resource B: **“Building Filesystem Agents | Vercel Academy”** (end-to-end multi-step agent using sandbox + tools).\n- Why it fits: these progressively introduce iterative tool loops and then a real agent pattern (filesystem/knowledge) that requires multiple steps.\n- Outcome: you can implement an agent that executes a sequence of tool actions and then synthesizes a final response. ([vercel.com](https://vercel.com/academy/filesystem-agents/agent-skeleton?utm_source=openai))\n\nMilestone 4: Tool call roundtrips in a working template (intermediate reinforcement)\n- Resource: **“Automatic Tool Call Roundtrips with Vercel AI SDK”** template.\n- Why it fits: gives a runnable Next.js example specifically showcasing multi-round tool calling behavior without requiring you to infer too much from scattered snippets.\n- Outcome: you can reuse the roundtrip pattern and modify tools/instructions safely. ([vercel.com](https://vercel.com/templates/ai/ai-sdk-roundtrips?utm_source=openai))\n\nMilestone 5: Generative UI + protocol understanding (intermediate)\n- Resource: **“Multi-Step & Generative UI | Vercel Academy”** plus the SDK UI stream protocol docs.\n- Why it fits: ensures you understand how streamed message parts and tool results map to UI updates.\n- Outcome: you can render tool results as UI components and keep the UI consistent across multi-step runs. ([vercel.com](https://vercel.com/academy/ai-sdk/multi-step-and-generative-ui?utm_source=openai))",
+      "sources": [
+        {
+          "title": "Builders Guide to the AI SDK | Vercel Academy",
+          "url": "https://vercel.com/academy/ai-sdk",
+          "relevance": "Official entry point for learning the SDK with current patterns."
+        },
+        {
+          "title": "Tool Use | Vercel Academy",
+          "url": "https://vercel.com/academy/ai-sdk/tool-use",
+          "relevance": "Directly maps to building tool-using agents."
+        },
+        {
+          "title": "Agent Skeleton | Vercel Academy",
+          "url": "https://vercel.com/academy/filesystem-agents/agent-skeleton",
+          "relevance": "Best scaffold for multi-step tool loops (ToolLoopAgent)."
+        },
+        {
+          "title": "Building Filesystem Agents | Vercel Academy",
+          "url": "https://vercel.com/academy/filesystem-agents",
+          "relevance": "End-to-end multi-step agent example aligned to intermediate milestone."
+        }
+      ]
+    },
+    {
+      "task": "Gather practical guides/tutorials for deploying agent apps with Vercel (routing, environment variables, serverless setup) and highlight common pitfalls and debugging techniques.",
+      "answer": "For deploying Vercel AI SDK agent apps, the practical guidance clusters into three areas—**routing**, **environment variables**, and **runtime/serverless constraints**—plus the debugging/pitfall checklist.\n\nRouting / deployment contract\n- Use Vercel/Next.js **App Router route handlers** for agent API endpoints; Vercel’s AI SDK academy content explicitly points to a default chat contract (e.g., a route handler path like `/app/api/chat/route.ts`), and tool-use lessons mention keeping the expected route handler in place for chat flows.\n- Practical advice: keep your agent backend in a route handler so streaming/tool roundtrips behave consistently, and treat UI rendering as a separate client layer. ([vercel.com](https://vercel.com/academy/ai-sdk/tool-use?utm_source=openai))\n\nEnvironment variables (keys, gateway, provider credentials)\n- Manage provider keys via Vercel environment variables and keep `.env.local` aligned with what you set on Vercel for production.\n- Vercel’s environment variable documentation also notes limits and differences for Edge runtime vs standard serverless contexts.\n- Practical advice: verify the correct environment is selected for deployment (preview vs production) and redeploy after updating variables. ([vercel.com](https://vercel.com/docs/environment-variables?utm_source=openai))\n\nServerless/runtime setup + timeouts\n- Vercel deployment guidance for AI SDK apps highlights serverless function constraints (e.g., maximum duration on lower tiers) which can matter for multi-step agents.\n- Pitfall: multi-step tool loops can exceed function time limits or produce truncated streams; add guardrails like max steps and consider durable workflow patterns for long-running tasks.\n- Debug technique: reproduce locally, then add server-side logging around tool calls and loop iterations, and confirm streaming headers/protocol handling with a network trace. ([v5.ai-sdk.dev](https://v5.ai-sdk.dev/docs/advanced/vercel-deployment-guide?utm_source=openai))\n\nCommon pitfalls & how to debug\n- **Streaming not actually streaming**: confirm you’re using the SDK’s streaming/UI protocol path end-to-end (backend response type + frontend stream consumption). Mismatched protocols typically lead to “buffered” results.\n- **Tool calls not firing**: check tool schemas and that tool execution code runs server-side (not accidentally in a client bundle), and verify route handler path matches the UI hook expectation.\n- **Environment mismatch**: keys set locally but not on Vercel (or set only for preview) cause provider auth errors that can look like model failures.\n\nReferences above provide the “official” pieces for routing and env vars; the remaining debugging tactics are derived from how the streaming protocol and serverless constraints interact in practice. ([vercel.com](https://vercel.com/docs/functions/streaming/streaming-examples?utm_source=openai))",
+      "sources": [
+        {
+          "title": "Tool Use | Vercel Academy",
+          "url": "https://vercel.com/academy/ai-sdk/tool-use",
+          "relevance": "Routing/tool-calling contract guidance for agent chat flows."
+        },
+        {
+          "title": "Environment variables (Vercel docs)",
+          "url": "https://vercel.com/docs/environment-variables",
+          "relevance": "Authoritative env var setup and runtime size limits (important for deployments)."
+        },
+        {
+          "title": "AI Gateway Setup (Vercel Academy; env var + redeploy steps)",
+          "url": "https://vercel.com/academy/ai-summary-app-with-nextjs/ai-gateway-setup",
+          "relevance": "Practical gateway + env var workflow for agent apps."
+        },
+        {
+          "title": "Advanced: Vercel Deployment Guide (AI SDK on Next.js)",
+          "url": "https://v5.ai-sdk.dev/docs/advanced/vercel-deployment-guide",
+          "relevance": "Serverless constraints and deployment considerations for AI SDK apps."
+        }
+      ]
+    },
+    {
+      "task": "Recommend additional learning resources (books/courses/blogs/open-source repos) that complement the Vercel AI SDK for agent patterns (planning, memory, orchestration, evals).",
+      "answer": "To complement the Vercel AI SDK (which provides streaming/UI, tool calling, and agent looping primitives), use additional resources that cover broader agent patterns: memory, orchestration, durability, and evaluation.\n\nMemory / agent state beyond in-request history\n- Resource: **“Agents: Memory” (ai-sdk.dev)**, which explains mapping the agent’s `execute` behavior to a storage backend (filesystem/db/other) and connects it to persistent memory patterns.\n- Why it complements: Vercel AI SDK handles the loop and UI; persistent memory is a separate design concern you’ll implement or connect via providers. ([ai-sdk.dev](https://ai-sdk.dev/docs/agents/memory?utm_source=openai))\n\nDurable multi-step orchestration\n- Resource: **“AI Agents on Vercel” (Vercel Examples guide)** and the **Open Agents template repo**.\n- Why it complements: for multi-step agents that may exceed single-request serverless limits, durable orchestration patterns matter (checkpointing/retries).\n- Outcome: you can integrate your agent logic into a durable execution model rather than relying solely on a single streaming call. ([examples.vercel.com](https://examples.vercel.com/guides/ai-agents?utm_source=openai))\n\nAgent/workflow patterns (planning/evals-style structured approach)\n- Resource: **AI SDK Patterns site** (ai-sdk-patterns.*) which provides modular patterns like streaming, tool calling, and multi-step agent orchestration.\n- Why it complements: it’s a “pattern library” perspective—useful to decide when you need planning, tool loops, approvals, and web search.\n- Outcome: you can select an implementation strategy rather than inventing one from scratch each time. ([ai-sdk-patterns.dev](https://ai-sdk-patterns.dev/?utm_source=openai))\n\nRecommended “official-adjacent” repo templates to study architecture\n- Resource: **Vercel Labs open-source templates** such as `knowledge-agent-template`.\n- Why it complements: you can read production-oriented architecture decisions (routing, knowledge handling, and integration style) in a way that’s consistent with the Vercel ecosystem.\n- Outcome: accelerate from tutorial-level examples to a maintainable baseline. ([github.com](https://github.com/vercel-labs/knowledge-agent-template?utm_source=openai))",
+      "sources": [
+        {
+          "title": "Agents: Memory (ai-sdk.dev)",
+          "url": "https://ai-sdk.dev/docs/agents/memory",
+          "relevance": "Practical memory pattern guidance that complements Vercel’s loop/UI components."
+        },
+        {
+          "title": "AI Agents on Vercel (examples guide)",
+          "url": "https://examples.vercel.com/guides/ai-agents",
+          "relevance": "Overview of agent infrastructure and how it fits within Vercel’s stack."
+        },
+        {
+          "title": "GitHub - vercel-labs/open-agents",
+          "url": "https://github.com/vercel-labs/open-agents",
+          "relevance": "Durable agent template to study orchestration and architecture."
+        },
+        {
+          "title": "GitHub - vercel-labs/knowledge-agent-template",
+          "url": "https://github.com/vercel-labs/knowledge-agent-template",
+          "relevance": "Production-oriented template that illustrates knowledge/agent architecture choices."
+        }
+      ]
+    }
+  ]
+}
