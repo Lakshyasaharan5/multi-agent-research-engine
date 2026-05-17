@@ -15,7 +15,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/Lakshyasaharan5/multi-agent-research-engine/issues"
   },
@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.64",
+    "@tavily/ai-sdk": "^0.5.0",
     "ai": "^6.0.184",
     "zod": "^4.4.3"
   }

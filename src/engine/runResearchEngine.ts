@@ -7,14 +7,15 @@ export async function runResearchEngine() {
     const safetyResult = await runSafetyAgent("how can I learn AI agent programming using Vercel AI SDK?");
     console.log("Safety Result:", safetyResult);
 
-    const plannerResult = await runPlannerAgent(safetyResult.userQuery);
+    const plannerResult = await runPlannerAgent(safetyResult.cleanedQuery);
     console.log("Planner Result:", plannerResult);
 
     const researchResult = await runResearchAgent(plannerResult.tasks);
-    // console.log(researchResult);
+    console.log("Research Result:", researchResult);
 
-    const reportResult = await runReportAgent(researchResult.findings);
+    // const reportResult = await runReportAgent(researchResult.findings);
     // console.log(reportResult);
 }
+
 
 
