@@ -1,0 +1,5 @@
+{
+  "result": "safe",
+  "reason": "The user asks for guidance on learning AI agent programming using the Vercel AI SDK. This is a benign, educational programming request with no indication of wrongdoing, sensitive data, or harmful intent.",
+  "cleanedQuery": "How can I learn AI agent programming using the Vercel AI SDK?"
+}

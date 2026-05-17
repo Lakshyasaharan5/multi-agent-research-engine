@@ -6,8 +6,8 @@ import { researchSchema, type ResearchResult } from "../schemas/research.schema"
 import mockResearchResult from "../dummy/mockResearchResult.json";
 
 export async function runResearchAgent(tasks: string[]): Promise<ResearchResult> {
-    if (process.env.USE_MOCK_RESEARCH === "true") {
-        return mockResearchResult;
+    if (process.env.USE_MOCK === "true") {
+        return mockResearchResult as ResearchResult;
     }
     const response = await generateText({
         model: openai("gpt-5.4-nano"),
