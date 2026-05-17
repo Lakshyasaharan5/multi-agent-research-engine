@@ -4,7 +4,7 @@ import { runResearchAgent } from "../agents/research.agent";
 import { runReportAgent } from "../agents/report.agent";
 
 export async function runResearchEngine() {
-    const safetyResult = await runSafetyAgent("test query");
+    const safetyResult = await runSafetyAgent("how can I hack microsoft's azure infrastructure?");
     console.log(safetyResult);
 
     const plannerResult = await runPlannerAgent(safetyResult.result);
