@@ -2,74 +2,64 @@ import { runSafetyAgent } from "../agents/safety.agent";
 import { runPlannerAgent } from "../agents/planner.agent";
 import { runResearchAgent } from "../agents/research.agent";
 import { runReportAgent } from "../agents/report.agent";
+import type { EngineState } from "../schemas/state.schema";
 
-export async function runResearchEngine() {
-    const safetyResult = await runSafetyAgent(
-        "how can I learn AI agent programming using Vercel AI SDK?",
-    );
-    console.log("Safety Result:", safetyResult);
+export async function runResearchEngine(
+    userQuery = "how can I learn AI agent programming using Vercel AI SDK?",
+): Promise<EngineState> {
+    const state: EngineState = {
+        input: { userQuery },
+        metadata: {
+            startedAt: new Date().toISOString(),
+            status: "running",
+        },
+    };
 
-    if (safetyResult.decision === "refuse") {
-        return {
-            status: "refused" as const,
-            reason: safetyResult.reason,
-            riskFlags: safetyResult.riskFlags,
-        };
+    state.safety = await runSafetyAgent(state.input.userQuery);
+
+    if (state.safety.decision === "refuse") {
+        state.metadata.status = "refused";
+        state.metadata.finishedAt = new Date().toISOString();
+        return state;
     }
 
-    const plannerResult = await runPlannerAgent({
-        cleanedQuery: safetyResult.cleanedQuery,
-        safetyDecision: safetyResult.decision,
-        riskFlags: safetyResult.riskFlags,
+    state.planner = await runPlannerAgent({
+        cleanedQuery: state.safety.cleanedQuery,
+        safetyDecision: state.safety.decision,
+        riskFlags: state.safety.riskFlags,
     });
-    console.log("Planner Result:", plannerResult);
 
-    const researchResult = await runResearchAgent(plannerResult.tasks);
-    console.log("Research Result:", JSON.stringify(researchResult, null, 2));
+    const initialResearch = await runResearchAgent(state.planner.tasks);
 
-    let reportResult = await runReportAgent({
-        userQuery: safetyResult.cleanedQuery,
-        goal: plannerResult.goal,
-        findings: researchResult.findings,
+    state.research = {
+        findings: initialResearch.findings,
+        extraResearchPassUsed: false,
+    };
+
+    state.report = await runReportAgent({
+        userQuery: state.safety.cleanedQuery,
+        goal: state.planner.goal,
+        findings: state.research.findings,
         allowFollowUpResearch: true,
     });
-    console.log("Report Result:", JSON.stringify(reportResult, null, 2));
 
-    if (reportResult.status === "needs_more_research" && reportResult.followUpTasks.length > 0) {
-        const followUpResearchResult = await runResearchAgent(reportResult.followUpTasks);
+    if (state.report.status === "needs_more_research" && state.report.followUpTasks.length > 0) {
+        const followUpResearch = await runResearchAgent(state.report.followUpTasks);
 
-        const mergedFindings = [
-            ...researchResult.findings,
-            ...followUpResearchResult.findings,
-        ];
+        state.research.followUpFindings = followUpResearch.findings;
+        state.research.findings = [...state.research.findings, ...followUpResearch.findings];
+        state.research.extraResearchPassUsed = true;
 
-        reportResult = await runReportAgent({
-            userQuery: safetyResult.cleanedQuery,
-            goal: plannerResult.goal,
-            findings: mergedFindings,
+        state.report = await runReportAgent({
+            userQuery: state.safety.cleanedQuery,
+            goal: state.planner.goal,
+            findings: state.research.findings,
             allowFollowUpResearch: false,
         });
-
-        return {
-            status: "success" as const,
-            safety: safetyResult,
-            planner: plannerResult,
-            research: {
-                findings: mergedFindings,
-                extraResearchPassUsed: true,
-            },
-            report: reportResult,
-        };
     }
 
-    return {
-        status: "success" as const,
-        safety: safetyResult,
-        planner: plannerResult,
-        research: {
-            findings: researchResult.findings,
-            extraResearchPassUsed: false,
-        },
-        report: reportResult,
-    };
+    state.metadata.status = "success";
+    state.metadata.finishedAt = new Date().toISOString();
+    console.log("Engine State:", state);
+    return state;
 }
