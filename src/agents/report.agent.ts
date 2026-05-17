@@ -8,6 +8,7 @@ export async function runReportAgent(input: {
     userQuery: string;
     goal: string;
     findings: unknown;
+    allowFollowUpResearch: boolean;
 }): Promise<ReportResult> {
     if (process.env.USE_MOCK === "true" || process.env.USE_MOCK_REPORT === "true") {
         return mockReportResult as ReportResult;
