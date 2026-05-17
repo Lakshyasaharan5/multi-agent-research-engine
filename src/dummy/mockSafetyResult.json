@@ -1,6 +1,6 @@
 {
-  "decision": "allow",
-  "cleanedQuery": "how can I learn AI agent programming using Vercel AI SDK?",
-  "reason": "The query is a legitimate educational request about learning AI agent programming with a specific SDK. No prompt-injection, system-bypass, or harmful intent is present.",
-  "riskFlags": []
+    "decision": "allow",
+    "cleanedQuery": "how can I learn AI agent programming using Vercel AI SDK?",
+    "reason": "The query is a legitimate educational request about learning AI agent programming with a specific SDK. No prompt-injection, system-bypass, or harmful intent is present.",
+    "riskFlags": []
 }

@@ -1,10 +1,10 @@
 {
-  "goal": "Learn how to program AI agents using the Vercel AI SDK, including core concepts, supported agent patterns, and practical implementation steps with examples.",
-  "tasks": [
-    "Identify the key features and abstractions in the Vercel AI SDK relevant to AI agents (e.g., Agents, streaming, tools/function calling, state/memory patterns).",
-    "Review official Vercel AI SDK documentation, guides, and reference examples to map a learning path from basic usage to full agent workflows.",
-    "Find practical tutorials or example repos showing complete agent implementations (tool use, multi-step reasoning/action, system prompts, and integration with external APIs).",
-    "Determine recommended development setup and best practices for building and testing agent apps with the Vercel AI SDK (environment variables, logging/telemetry, error handling, evals).",
-    "Compile a step-by-step learning plan and project ideas that progressively build agent capabilities using the Vercel AI SDK, with checkpoints and measurable outcomes."
-  ]
+    "goal": "Learn how to program AI agents using the Vercel AI SDK, including core concepts, supported agent patterns, and practical implementation steps with examples.",
+    "tasks": [
+        "Identify the key features and abstractions in the Vercel AI SDK relevant to AI agents (e.g., Agents, streaming, tools/function calling, state/memory patterns).",
+        "Review official Vercel AI SDK documentation, guides, and reference examples to map a learning path from basic usage to full agent workflows.",
+        "Find practical tutorials or example repos showing complete agent implementations (tool use, multi-step reasoning/action, system prompts, and integration with external APIs).",
+        "Determine recommended development setup and best practices for building and testing agent apps with the Vercel AI SDK (environment variables, logging/telemetry, error handling, evals).",
+        "Compile a step-by-step learning plan and project ideas that progressively build agent capabilities using the Vercel AI SDK, with checkpoints and measurable outcomes."
+    ]
 }

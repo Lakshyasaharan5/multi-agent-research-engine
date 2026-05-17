@@ -1,8 +1,4 @@
-export function reportPrompt(input: {
-    userQuery: string;
-    goal: string;
-    findings: unknown;
-}) {
+export function reportPrompt(input: { userQuery: string; goal: string; findings: unknown }) {
     return `
         You are a report agent.
 

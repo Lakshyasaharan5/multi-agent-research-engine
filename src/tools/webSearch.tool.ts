@@ -20,11 +20,12 @@ const mockSearch = tool({
     },
 });
 
-export const webSearchTool = process.env.USE_MOCK_RESEARCH === "true"
-    ? mockSearch
-    : tavilySearch({
-        searchDepth: "basic",
-        includeAnswer: true,
-        maxResults: 5,
-        topic: "general",
-    });
+export const webSearchTool =
+    process.env.USE_MOCK_RESEARCH === "true"
+        ? mockSearch
+        : tavilySearch({
+              searchDepth: "basic",
+              includeAnswer: true,
+              maxResults: 5,
+              topic: "general",
+          });

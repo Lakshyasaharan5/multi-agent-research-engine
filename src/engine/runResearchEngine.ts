@@ -4,7 +4,9 @@ import { runResearchAgent } from "../agents/research.agent";
 import { runReportAgent } from "../agents/report.agent";
 
 export async function runResearchEngine() {
-    const safetyResult = await runSafetyAgent("how can I learn AI agent programming using Vercel AI SDK?");
+    const safetyResult = await runSafetyAgent(
+        "how can I learn AI agent programming using Vercel AI SDK?",
+    );
     console.log("Safety Result:", safetyResult);
 
     if (safetyResult.decision === "refuse") {
@@ -32,6 +34,3 @@ export async function runResearchEngine() {
     });
     console.log("Report Result:", JSON.stringify(reportResult, null, 2));
 }
-
-
-

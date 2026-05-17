@@ -1,5 +1,5 @@
 export function researchPrompt(tasks: string[]) {
-  return `
+    return `
         You are a research agent.
 
         Use web search to research each task.
