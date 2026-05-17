@@ -60,6 +60,6 @@ export async function runResearchEngine(
 
     state.metadata.status = "success";
     state.metadata.finishedAt = new Date().toISOString();
-    console.log("Engine State:", state);
+    console.log(JSON.stringify(state, null, 2));
     return state;
 }
