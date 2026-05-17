@@ -1,12 +1,11 @@
 import { generateText, Output, stepCountIs } from "ai";
 import openai from "../lib/ai";
 import { researchPrompt } from "../prompts/research.prompt";
-import { webSearchTool } from "../tools/webSearch.tool";
 import { researchSchema, type ResearchResult } from "../schemas/research.schema";
 import mockResearchResult from "../dummy/mockResearchResult.json";
 
 export async function runResearchAgent(tasks: string[]): Promise<ResearchResult> {
-    if (process.env.USE_MOCK === "true") {
+    if (process.env.USE_MOCK === "true" || process.env.USE_MOCK_RESEARCH === "true") {
         return mockResearchResult as ResearchResult;
     }
     const response = await generateText({

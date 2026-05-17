@@ -6,7 +6,7 @@ import { safetyPrompt } from '../prompts/safety.prompt';
 import mockSafetyResult from '../dummy/mockSafetyResult.json';
 
 export async function runSafetyAgent(userQuery: string): Promise<SafetyResult> {
-  if (process.env.USE_MOCK === "true") {
+  if (process.env.USE_MOCK === "true" || process.env.USE_MOCK_SAFETY === "true") {
     return mockSafetyResult as SafetyResult;
   }
   const response = await generateText({

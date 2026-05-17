@@ -5,7 +5,7 @@ import openai from "../lib/ai";
 import mockPlannerResult from "../dummy/mockPlannerResult.json";
 
 export async function runPlannerAgent(cleanedQuery: string): Promise<PlannerResult> {
-  if (process.env.USE_MOCK === "true") {
+  if (process.env.USE_MOCK === "true" || process.env.USE_MOCK_PLANNER === "true") {
     return mockPlannerResult as PlannerResult;
   }
   const response = await generateText({

@@ -9,7 +9,7 @@ export async function runReportAgent(input: {
     goal: string;
     findings: unknown;
 }): Promise<ReportResult> {
-    if (process.env.USE_MOCK === "true") {
+    if (process.env.USE_MOCK === "true" || process.env.USE_MOCK_REPORT === "true") {
         return mockReportResult as ReportResult;
     }
     const response = await generateText({
