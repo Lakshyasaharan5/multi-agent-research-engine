@@ -4,11 +4,11 @@ import { runResearchAgent } from "../agents/research.agent";
 import { runReportAgent } from "../agents/report.agent";
 
 export async function runResearchEngine() {
-    const safetyResult = await runSafetyAgent("how can I hack microsoft's azure infrastructure?");
-    console.log(safetyResult);
+    const safetyResult = await runSafetyAgent("how can I learn AI agent programming using Vercel AI SDK?");
+    console.log("Safety Result:", safetyResult);
 
-    const plannerResult = await runPlannerAgent(safetyResult.result);
-    // console.log(plannerResult);
+    const plannerResult = await runPlannerAgent(safetyResult.userQuery);
+    console.log("Planner Result:", plannerResult);
 
     const researchResult = await runResearchAgent(plannerResult.tasks);
     // console.log(researchResult);

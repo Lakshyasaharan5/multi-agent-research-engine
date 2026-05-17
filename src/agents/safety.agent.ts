@@ -1,10 +1,10 @@
 import { generateText, Output } from 'ai';
 import openai from '../lib/ai';
 
-import { safetySchema } from '../schemas/safety.schema';
+import { safetySchema, SafetyResult } from '../schemas/safety.schema';
 import { safetyPrompt } from '../prompts/safety.prompt';
 
-export async function runSafetyAgent(userQuery: string) {
+export async function runSafetyAgent(userQuery: string): Promise<SafetyResult> {
   const response = await generateText({
     model: openai('gpt-5.4-nano'),
     output: Output.object({
@@ -13,7 +13,5 @@ export async function runSafetyAgent(userQuery: string) {
     prompt: safetyPrompt(userQuery),
   });
 
-  return {
-    result: response.text.trim().toLowerCase(),
-  };
+  return response.output;
 }
