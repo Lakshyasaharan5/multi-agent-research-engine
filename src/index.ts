@@ -1,3 +1,8 @@
 import { runResearchEngine } from "./engine/runResearchEngine";
 
-runResearchEngine();
+async function main() {
+    await runResearchEngine();
+    await runResearchEngine(); // for cache testing
+}
+
+main();

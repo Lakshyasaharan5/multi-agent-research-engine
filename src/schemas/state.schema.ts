@@ -32,6 +32,7 @@ export type EngineState = {
         startedAt: string;
         finishedAt?: string;
         status: "running" | "success" | "refused" | "error" | "partial_failure";
+        cached: boolean;
         errors: {
             step: EngineStep;
             message: string;

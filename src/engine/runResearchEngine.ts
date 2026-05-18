@@ -5,6 +5,12 @@ import { runReportAgent } from "../agents/report.agent";
 import type { EngineState, EngineStep } from "../schemas/state.schema";
 import { withRetry } from "../lib/retry";
 import { Logger } from "../lib/logger";
+import { cache } from "../lib/cache";
+
+function createCacheKey(userQuery: string) {
+    const normalized = userQuery.trim().toLowerCase().replace(/\s+/g, " ");
+    return `engine:v1:${normalized}`;
+}
 
 export async function runResearchEngine(
     userQuery = "how can I learn AI agent programming using Vercel AI SDK?",
@@ -12,12 +18,24 @@ export async function runResearchEngine(
     const logger = new Logger("Engine");
     const retryLogger = logger.child("Retry");
 
+    const cacheKey = createCacheKey(userQuery);
+    const cachedState = cache.get<EngineState>(cacheKey);
+
+    if (cachedState) {
+        cachedState.metadata.cached = true;
+        logger.info("Cache hit", { cacheKey });
+        return cachedState;
+    }
+
+    logger.info("Cache miss", { cacheKey });
+
     const state: EngineState = {
         input: { userQuery },
         metadata: {
             startedAt: new Date().toISOString(),
             status: "running",
             errors: [],
+            cached: false,
         },
     };
 
@@ -160,10 +178,16 @@ export async function runResearchEngine(
 
         state.metadata.status = "success";
         state.metadata.finishedAt = new Date().toISOString();
+
         logger.metric("Research engine completed", {
             status: state.metadata.status,
             extraResearchPassUsed: state.research?.extraResearchPassUsed ?? false,
         });
+
+        cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
+
+        logger.info("Stored result in cache", { cacheKey });
+
         return state;
     } catch (error) {
         state.metadata.status = state.safety ? "partial_failure" : "error";
