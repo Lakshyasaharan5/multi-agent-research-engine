@@ -1,22 +1,47 @@
-import fs from "node:fs/promises";
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
 import { runResearchEngine } from "./engine/runResearchEngine";
 import { createResearchZip } from "./lib/createZip";
 
-async function main() {
-    const result = await runResearchEngine(
-        "how can I learn AI agent programming using Vercel AI SDK?",
-    );
+const app = new Hono();
+
+app.get("/", (c) => {
+    return c.json({
+        status: "ok",
+        message: "Multi-agent research engine is running",
+    });
+});
+
+app.post("/api/research", async (c) => {
+    const body = await c.req.json<{ query?: string }>();
+
+    if (!body.query || body.query.trim().length === 0) {
+        return c.json(
+            {
+                error: "Query is required",
+            },
+            400,
+        );
+    }
+
+    const result = await runResearchEngine(body.query);
 
     const zipBuffer = await createResearchZip({
         state: result.state,
         logs: result.logs,
     });
 
-    await fs.mkdir("outputs", { recursive: true });
+    return new Response(new Uint8Array(zipBuffer), {
+        headers: {
+            "Content-Type": "application/zip",
+            "Content-Disposition": 'attachment; filename="research-output.zip"',
+        },
+    });
+});
 
-    await fs.writeFile("outputs/research-output.zip", zipBuffer);
+serve({
+    fetch: app.fetch,
+    port: Number(process.env.PORT ?? 3000),
+});
 
-    console.log("ZIP created: outputs/research-output.zip");
-}
-
-main();
+console.log(`Server running on http://localhost:${process.env.PORT ?? 3000}`);
