@@ -4,10 +4,14 @@ import { runResearchAgent } from "../agents/research.agent";
 import { runReportAgent } from "../agents/report.agent";
 import type { EngineState, EngineStep } from "../schemas/state.schema";
 import { withRetry } from "../lib/retry";
+import { Logger } from "../lib/logger";
 
 export async function runResearchEngine(
     userQuery = "how can I learn AI agent programming using Vercel AI SDK?",
 ): Promise<EngineState> {
+    const logger = new Logger("Engine");
+    const retryLogger = logger.child("Retry");
+
     const state: EngineState = {
         input: { userQuery },
         metadata: {
@@ -17,35 +21,65 @@ export async function runResearchEngine(
         },
     };
 
+    logger.info("Research engine started", { userQuery });
+
     let currentStep: EngineStep = "safety";
 
     try {
         currentStep = "safety";
-        const safety = await withRetry(() => runSafetyAgent(state.input.userQuery), 0);
-
+        logger.info("Running safety agent");
+        const safety = await withRetry(
+            () => runSafetyAgent(state.input.userQuery, logger.child("Safety")),
+            0,
+            retryLogger,
+            { step: currentStep },
+        );
+        logger.info("Safety agent completed", {
+            decision: safety.decision,
+            riskFlags: safety.riskFlags.length,
+        });
         state.safety = safety;
 
         if (safety.decision === "refuse") {
+            logger.info("Pipeline refused by safety agent");
             state.metadata.status = "refused";
             state.metadata.finishedAt = new Date().toISOString();
             return state;
         }
 
         currentStep = "planner";
+        logger.info("Running planner agent");
         const planner = await withRetry(
             () =>
-                runPlannerAgent({
-                    cleanedQuery: safety.cleanedQuery,
-                    safetyDecision: safety.decision,
-                    riskFlags: safety.riskFlags,
-                }),
+                runPlannerAgent(
+                    {
+                        cleanedQuery: safety.cleanedQuery,
+                        safetyDecision: safety.decision,
+                        riskFlags: safety.riskFlags,
+                    },
+                    logger.child("Planner"),
+                ),
             1,
+            retryLogger,
+            { step: currentStep },
         );
+        logger.info("Planner agent completed", {
+            taskCount: planner.tasks.length,
+        });
 
         state.planner = planner;
 
         currentStep = "initial_research";
-        const initialResearch = await withRetry(() => runResearchAgent(planner.tasks), 1);
+        logger.info("Running initial research agent");
+        const initialResearch = await withRetry(
+            () => runResearchAgent(planner.tasks, logger.child("Research")),
+            1,
+            retryLogger,
+            { step: currentStep },
+        );
+        logger.info("Initial research completed", {
+            findingCount: initialResearch.findings.length,
+        });
 
         let findings = initialResearch.findings;
 
@@ -55,25 +89,42 @@ export async function runResearchEngine(
         };
 
         currentStep = "initial_report";
+        logger.info("Running report agent");
         let report = await withRetry(
             () =>
-                runReportAgent({
-                    userQuery: safety.cleanedQuery,
-                    goal: planner.goal,
-                    findings,
-                    allowFollowUpResearch: true,
-                }),
+                runReportAgent(
+                    {
+                        userQuery: safety.cleanedQuery,
+                        goal: planner.goal,
+                        findings,
+                        allowFollowUpResearch: true,
+                    },
+                    logger.child("Report"),
+                ),
             1,
+            retryLogger,
+            { step: currentStep },
         );
+        logger.info("Report agent completed", {
+            status: report.status,
+        });
 
         state.report = report;
 
         if (report.status === "needs_more_research" && report.followUpTasks.length > 0) {
             currentStep = "follow_up_research";
+            logger.info("Running follow-up research", {
+                followUpTaskCount: report.followUpTasks.length,
+            });
             const followUpResearch = await withRetry(
-                () => runResearchAgent(report.followUpTasks),
+                () => runResearchAgent(report.followUpTasks, logger.child("Research")),
                 1,
+                retryLogger,
+                { step: currentStep },
             );
+            logger.info("Follow-up research completed", {
+                additionalFindings: followUpResearch.findings.length,
+            });
 
             findings = [...findings, ...followUpResearch.findings];
 
@@ -84,22 +135,35 @@ export async function runResearchEngine(
             };
 
             currentStep = "final_report";
+            logger.info("Running final report generation");
             report = await withRetry(
                 () =>
-                    runReportAgent({
-                        userQuery: safety.cleanedQuery,
-                        goal: planner.goal,
-                        findings,
-                        allowFollowUpResearch: false,
-                    }),
+                    runReportAgent(
+                        {
+                            userQuery: safety.cleanedQuery,
+                            goal: planner.goal,
+                            findings,
+                            allowFollowUpResearch: false,
+                        },
+                        logger.child("Report"),
+                    ),
                 1,
+                retryLogger,
+                { step: currentStep },
             );
+            logger.info("Final report generated", {
+                status: report.status,
+            });
 
             state.report = report;
         }
 
         state.metadata.status = "success";
         state.metadata.finishedAt = new Date().toISOString();
+        logger.metric("Research engine completed", {
+            status: state.metadata.status,
+            extraResearchPassUsed: state.research?.extraResearchPassUsed ?? false,
+        });
         return state;
     } catch (error) {
         state.metadata.status = state.safety ? "partial_failure" : "error";
@@ -107,6 +171,10 @@ export async function runResearchEngine(
         state.metadata.errors.push({
             step: currentStep,
             message: error instanceof Error ? error.message : "Unknown engine error",
+        });
+        logger.error("Research engine failed", {
+            step: currentStep,
+            error: error instanceof Error ? error.message : "Unknown error",
         });
         return state;
     } finally {
