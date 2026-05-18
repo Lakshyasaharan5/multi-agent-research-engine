@@ -33,6 +33,9 @@ export type EngineState = {
         finishedAt?: string;
         status: "running" | "success" | "refused" | "error" | "partial_failure";
         cached: boolean;
+        cacheType?: "exact" | "semantic";
+        cacheSimilarity?: number;
+        matchedCachedQuery?: string;
         errors: {
             step: EngineStep;
             message: string;

@@ -6,6 +6,7 @@ import type { EngineState, EngineStep } from "../schemas/state.schema";
 import { withRetry } from "../lib/retry";
 import { Logger } from "../lib/logger";
 import { cache } from "../lib/cache";
+import { semanticCache } from "../lib/semanticCache";
 
 function createCacheKey(userQuery: string) {
     const normalized = userQuery.trim().toLowerCase().replace(/\s+/g, " ");
@@ -16,13 +17,15 @@ export async function runResearchEngine(
     userQuery = "how can I learn AI agent programming using Vercel AI SDK?",
 ): Promise<EngineState> {
     const logger = new Logger("Engine");
-    const retryLogger = logger.child("Retry");
+    logger.info("Research engine started", { userQuery });
 
     const cacheKey = createCacheKey(userQuery);
     const cachedState = cache.get<EngineState>(cacheKey);
 
     if (cachedState) {
         cachedState.metadata.cached = true;
+        cachedState.metadata.cacheType = "exact";
+        cachedState.metadata.matchedCachedQuery = cachedState.input.userQuery;
         logger.info("Cache hit", { cacheKey });
         return cachedState;
     }
@@ -38,11 +41,8 @@ export async function runResearchEngine(
             cached: false,
         },
     };
-
-    logger.info("Research engine started", { userQuery });
-
+    const retryLogger = logger.child("Retry");
     let currentStep: EngineStep = "safety";
-
     try {
         currentStep = "safety";
         logger.info("Running safety agent");
@@ -64,6 +64,24 @@ export async function runResearchEngine(
             state.metadata.finishedAt = new Date().toISOString();
             return state;
         }
+
+        const semanticHit = await semanticCache.findSimilar(safety.cleanedQuery);
+
+        if (semanticHit) {
+            logger.info("Semantic cache hit", {
+                similarity: semanticHit.similarity,
+                matchedQuery: semanticHit.matchedQuery,
+            });
+
+            semanticHit.state.metadata.cached = true;
+            semanticHit.state.metadata.cacheType = "semantic";
+            semanticHit.state.metadata.cacheSimilarity = semanticHit.similarity;
+            semanticHit.state.metadata.matchedCachedQuery = semanticHit.matchedQuery;
+
+            return semanticHit.state;
+        }
+
+        logger.info("Semantic cache miss");
 
         currentStep = "planner";
         logger.info("Running planner agent");
@@ -185,8 +203,10 @@ export async function runResearchEngine(
         });
 
         cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
-
         logger.info("Stored result in cache", { cacheKey });
+
+        await semanticCache.set(safety.cleanedQuery, state);
+        logger.info("Stored result in semantic cache");
 
         return state;
     } catch (error) {
