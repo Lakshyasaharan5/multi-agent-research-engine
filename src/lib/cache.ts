@@ -1,44 +1,27 @@
-type CacheEntry<T> = {
-    value: T;
-    expiresAt: number;
-};
+import { redis } from "./redis";
 
-export class MemoryCache {
-    private store = new Map<string, CacheEntry<unknown>>();
+export class RedisCache {
+    async get<T>(key: string): Promise<T | null> {
+        const value = await redis.get(key);
 
-    get<T>(key: string): T | null {
-        const entry = this.store.get(key);
-
-        if (!entry) {
+        if (!value) {
             return null;
         }
 
-        if (Date.now() > entry.expiresAt) {
-            this.store.delete(key);
-            return null;
-        }
-
-        return entry.value as T;
+        return JSON.parse(value) as T;
     }
 
-    set<T>(key: string, value: T, ttlMs: number): void {
-        this.store.set(key, {
-            value,
-            expiresAt: Date.now() + ttlMs,
-        });
+    async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
+        await redis.set(key, JSON.stringify(value), "PX", ttlMs);
     }
 
-    has(key: string): boolean {
-        return this.get(key) !== null;
+    async delete(key: string): Promise<void> {
+        await redis.del(key);
     }
 
-    delete(key: string): void {
-        this.store.delete(key);
-    }
-
-    clear(): void {
-        this.store.clear();
+    async clear(): Promise<void> {
+        await redis.flushdb();
     }
 }
 
-export const cache = new MemoryCache();
+export const cache = new RedisCache();

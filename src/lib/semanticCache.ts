@@ -1,13 +1,14 @@
-import { embed, cosineSimilarity } from "ai";
+import { cosineSimilarity, embed } from "ai";
 import openai from "./ai";
+import { redis } from "./redis";
 import type { EngineState } from "../schemas/state.schema";
 
 type SemanticCacheEntry = {
+    id: string;
     query: string;
     embedding: number[];
     state: EngineState;
     createdAt: string;
-    expiresAt: number;
 };
 
 type SemanticCacheHit = {
@@ -16,12 +17,12 @@ type SemanticCacheHit = {
     matchedQuery: string;
 };
 
-export class SemanticCache {
-    private entries: SemanticCacheEntry[] = [];
+export class RedisSemanticCache {
+    private readonly indexKey = "semantic-cache:index";
 
     constructor(
         private readonly threshold = 0.82,
-        private readonly ttlMs = 24 * 60 * 60 * 1000,
+        private readonly ttlSeconds = 24 * 60 * 60,
     ) {}
 
     private async createEmbedding(query: string): Promise<number[]> {
@@ -34,21 +35,30 @@ export class SemanticCache {
     }
 
     async findSimilar(query: string): Promise<SemanticCacheHit | null> {
-        this.removeExpiredEntries();
+        const ids = await redis.lrange(this.indexKey, 0, -1);
 
-        if (this.entries.length === 0) {
+        if (ids.length === 0) {
             return null;
         }
 
         const queryEmbedding = await this.createEmbedding(query);
 
-        let bestMatch: SemanticCacheHit | null = null;
+        let bestHit: SemanticCacheHit | null = null;
 
-        for (const entry of this.entries) {
+        for (const id of ids) {
+            const rawEntry = await redis.get(`semantic-cache:entry:${id}`);
+
+            if (!rawEntry) {
+                await redis.lrem(this.indexKey, 0, id);
+                continue;
+            }
+
+            const entry = JSON.parse(rawEntry) as SemanticCacheEntry;
+
             const similarity = cosineSimilarity(queryEmbedding, entry.embedding);
 
-            if (!bestMatch || similarity > bestMatch.similarity) {
-                bestMatch = {
+            if (!bestHit || similarity > bestHit.similarity) {
+                bestHit = {
                     state: entry.state,
                     similarity,
                     matchedQuery: entry.query,
@@ -56,33 +66,40 @@ export class SemanticCache {
             }
         }
 
-        if (!bestMatch || bestMatch.similarity < this.threshold) {
+        if (!bestHit || bestHit.similarity < this.threshold) {
             return null;
         }
 
-        return bestMatch;
+        return bestHit;
     }
 
     async set(query: string, state: EngineState): Promise<void> {
         const embedding = await this.createEmbedding(query);
+        const id = crypto.randomUUID();
 
-        this.entries.push({
+        const entry: SemanticCacheEntry = {
+            id,
             query,
             embedding,
             state,
             createdAt: new Date().toISOString(),
-            expiresAt: Date.now() + this.ttlMs,
-        });
+        };
+
+        await redis.set(`semantic-cache:entry:${id}`, JSON.stringify(entry), "EX", this.ttlSeconds);
+
+        await redis.rpush(this.indexKey, id);
+        await redis.expire(this.indexKey, this.ttlSeconds);
     }
 
-    private removeExpiredEntries(): void {
-        const now = Date.now();
-        this.entries = this.entries.filter((entry) => entry.expiresAt > now);
-    }
+    async clear(): Promise<void> {
+        const ids = await redis.lrange(this.indexKey, 0, -1);
 
-    clear(): void {
-        this.entries = [];
+        if (ids.length > 0) {
+            await redis.del(...ids.map((id) => `semantic-cache:entry:${id}`));
+        }
+
+        await redis.del(this.indexKey);
     }
 }
 
-export const semanticCache = new SemanticCache();
+export const semanticCache = new RedisSemanticCache();

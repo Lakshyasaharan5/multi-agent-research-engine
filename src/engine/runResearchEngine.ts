@@ -25,7 +25,7 @@ export async function runResearchEngine(
     logger.info("Research engine started", { userQuery });
 
     const cacheKey = createCacheKey(userQuery);
-    const cachedState = cache.get<EngineState>(cacheKey);
+    const cachedState = await cache.get<EngineState>(cacheKey);
 
     if (cachedState) {
         cachedState.metadata.cached = true;
@@ -201,7 +201,7 @@ export async function runResearchEngine(
         state.metadata.status = "success";
         state.metadata.finishedAt = new Date().toISOString();
 
-        cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
+        await cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
         logger.info("Stored result in cache", { cacheKey });
 
         await semanticCache.set(safety.cleanedQuery, state);
