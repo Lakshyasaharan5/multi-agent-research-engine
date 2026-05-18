@@ -8,6 +8,11 @@ import { Logger } from "../lib/logger";
 import { cache } from "../lib/cache";
 import { semanticCache } from "../lib/semanticCache";
 
+type EngineRunResult = {
+    state: EngineState;
+    logs: string;
+};
+
 function createCacheKey(userQuery: string) {
     const normalized = userQuery.trim().toLowerCase().replace(/\s+/g, " ");
     return `engine:v1:${normalized}`;
@@ -15,7 +20,7 @@ function createCacheKey(userQuery: string) {
 
 export async function runResearchEngine(
     userQuery = "how can I learn AI agent programming using Vercel AI SDK?",
-): Promise<EngineState> {
+): Promise<EngineRunResult> {
     const logger = new Logger("Engine");
     logger.info("Research engine started", { userQuery });
 
@@ -27,7 +32,7 @@ export async function runResearchEngine(
         cachedState.metadata.cacheType = "exact";
         cachedState.metadata.matchedCachedQuery = cachedState.input.userQuery;
         logger.info("Cache hit", { cacheKey });
-        return cachedState;
+        return { state: cachedState, logs: logger.getLogs() };
     }
 
     logger.info("Cache miss", { cacheKey });
@@ -62,7 +67,7 @@ export async function runResearchEngine(
             logger.info("Pipeline refused by safety agent");
             state.metadata.status = "refused";
             state.metadata.finishedAt = new Date().toISOString();
-            return state;
+            return { state, logs: logger.getLogs() };
         }
 
         const semanticHit = await semanticCache.findSimilar(safety.cleanedQuery);
@@ -77,8 +82,7 @@ export async function runResearchEngine(
             semanticHit.state.metadata.cacheType = "semantic";
             semanticHit.state.metadata.cacheSimilarity = semanticHit.similarity;
             semanticHit.state.metadata.matchedCachedQuery = semanticHit.matchedQuery;
-
-            return semanticHit.state;
+            return { state: semanticHit.state, logs: logger.getLogs() };
         }
 
         logger.info("Semantic cache miss");
@@ -197,18 +201,18 @@ export async function runResearchEngine(
         state.metadata.status = "success";
         state.metadata.finishedAt = new Date().toISOString();
 
-        logger.metric("Research engine completed", {
-            status: state.metadata.status,
-            extraResearchPassUsed: state.research?.extraResearchPassUsed ?? false,
-        });
-
         cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
         logger.info("Stored result in cache", { cacheKey });
 
         await semanticCache.set(safety.cleanedQuery, state);
         logger.info("Stored result in semantic cache");
 
-        return state;
+        logger.metric("Research engine completed", {
+            status: state.metadata.status,
+            extraResearchPassUsed: state.research?.extraResearchPassUsed ?? false,
+        });
+
+        return { state, logs: logger.getLogs() };
     } catch (error) {
         state.metadata.status = state.safety ? "partial_failure" : "error";
         state.metadata.finishedAt = new Date().toISOString();
@@ -220,8 +224,9 @@ export async function runResearchEngine(
             step: currentStep,
             error: error instanceof Error ? error.message : "Unknown error",
         });
-        return state;
+        return { state, logs: logger.getLogs() };
     } finally {
-        console.log(JSON.stringify(state, null, 2));
+        // console.log(logger.getLogs());
+        // console.log(JSON.stringify(state, null, 2));
     }
 }
