@@ -10,7 +10,7 @@ export async function runSafetyAgent(userQuery: string, logger: Logger): Promise
         return mockSafetyResult as SafetyResult;
     }
     const response = await generateText({
-        model: openai("gpt-5.4-nano"),
+        model: openai(process.env.SAFETY_LLM_MODEL || "gpt-5.4-nano"),
         output: Output.object({
             schema: safetySchema,
         }),

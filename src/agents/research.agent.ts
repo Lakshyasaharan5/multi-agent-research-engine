@@ -10,7 +10,7 @@ export async function runResearchAgent(tasks: string[], logger: Logger): Promise
         return mockResearchResult as ResearchResult;
     }
     const response = await generateText({
-        model: openai("gpt-5.4-nano"),
+        model: openai(process.env.RESEARCH_LLM_MODEL || "gpt-5.4-nano"),
         output: Output.object({
             schema: researchSchema,
         }),

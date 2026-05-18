@@ -18,7 +18,7 @@ export async function runReportAgent(
         return mockReportResult as ReportResult;
     }
     const response = await generateText({
-        model: openai("gpt-5.4-nano"),
+        model: openai(process.env.REPORT_LLM_MODEL || "gpt-5.4-nano"),
         output: Output.object({
             schema: reportSchema,
         }),

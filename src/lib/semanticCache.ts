@@ -22,7 +22,7 @@ export class RedisSemanticCache {
 
     constructor(
         private readonly threshold = 0.82,
-        private readonly ttlSeconds = 24 * 60 * 60,
+        private readonly ttlSeconds = Number(process.env.SEMANTIC_CACHE_TTL_S) || 24 * 60 * 60,
     ) {}
 
     private async createEmbedding(query: string): Promise<number[]> {

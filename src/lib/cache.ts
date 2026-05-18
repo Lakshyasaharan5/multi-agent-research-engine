@@ -1,6 +1,8 @@
 import { redis } from "./redis";
 
 export class RedisCache {
+    private readonly ttlMs = Number(process.env.CACHE_TTL_MS) || 24 * 60 * 60 * 1000;
+
     async get<T>(key: string): Promise<T | null> {
         const value = await redis.get(key);
 
@@ -11,8 +13,8 @@ export class RedisCache {
         return JSON.parse(value) as T;
     }
 
-    async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
-        await redis.set(key, JSON.stringify(value), "PX", ttlMs);
+    async set<T>(key: string, value: T): Promise<void> {
+        await redis.set(key, JSON.stringify(value), "PX", this.ttlMs);
     }
 
     async delete(key: string): Promise<void> {

@@ -17,7 +17,7 @@ export async function runPlannerAgent(
         return mockPlannerResult as PlannerResult;
     }
     const response = await generateText({
-        model: openai("gpt-5.4-nano"),
+        model: openai(process.env.PLANNER_LLM_MODEL || "gpt-5.4-nano"),
         output: Output.object({
             schema: plannerSchema,
         }),

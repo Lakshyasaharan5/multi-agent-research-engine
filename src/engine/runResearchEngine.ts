@@ -201,7 +201,7 @@ export async function runResearchEngine(
         state.metadata.status = "success";
         state.metadata.finishedAt = new Date().toISOString();
 
-        await cache.set(cacheKey, state, 24 * 60 * 60 * 1000);
+        await cache.set(cacheKey, state);
         logger.info("Stored result in cache", { cacheKey });
 
         await semanticCache.set(safety.cleanedQuery, state);
