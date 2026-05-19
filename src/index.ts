@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { runResearchEngine } from "./engine/runResearchEngine";
 import { createResearchZip } from "./lib/createZip";
+import { initRedis } from "./cache/redis";
+
+initRedis();
 
 const app = new Hono();
 

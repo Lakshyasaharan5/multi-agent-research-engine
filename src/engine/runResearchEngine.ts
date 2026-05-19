@@ -5,8 +5,8 @@ import { runReportAgent } from "../agents/report.agent";
 import type { EngineState, EngineStep } from "../schemas/state.schema";
 import { withRetry } from "../lib/retry";
 import { Logger } from "../lib/logger";
-import { cache } from "../lib/cache";
-import { semanticCache } from "../lib/semanticCache";
+import { Cache } from "../cache/cache";
+import { SemanticCache } from "../cache/semanticCache";
 
 type EngineRunResult = {
     state: EngineState;
@@ -23,6 +23,9 @@ export async function runResearchEngine(
 ): Promise<EngineRunResult> {
     const logger = new Logger("Engine");
     logger.info("Research engine started", { userQuery });
+
+    const cache = new Cache(logger.child("Cache"));
+    const semanticCache = new SemanticCache(logger.child("SemanticCache"));
 
     const cacheKey = createCacheKey(userQuery);
     const cachedState = await cache.get<EngineState>(cacheKey);
@@ -67,6 +70,7 @@ export async function runResearchEngine(
             logger.info("Pipeline refused by safety agent");
             state.metadata.status = "refused";
             state.metadata.finishedAt = new Date().toISOString();
+            await cache.set(cacheKey, state);
             return { state, logs: logger.getLogs() };
         }
 
@@ -82,6 +86,9 @@ export async function runResearchEngine(
             semanticHit.state.metadata.cacheType = "semantic";
             semanticHit.state.metadata.cacheSimilarity = semanticHit.similarity;
             semanticHit.state.metadata.matchedCachedQuery = semanticHit.matchedQuery;
+
+            await cache.set(cacheKey, semanticHit.state);
+
             return { state: semanticHit.state, logs: logger.getLogs() };
         }
 
@@ -202,10 +209,7 @@ export async function runResearchEngine(
         state.metadata.finishedAt = new Date().toISOString();
 
         await cache.set(cacheKey, state);
-        logger.info("Stored result in cache", { cacheKey });
-
         await semanticCache.set(safety.cleanedQuery, state);
-        logger.info("Stored result in semantic cache");
 
         logger.metric("Research engine completed", {
             status: state.metadata.status,
