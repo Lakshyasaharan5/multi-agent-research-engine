@@ -1,9 +1,9 @@
 import { generateText, Output } from "ai";
-import openai from "../lib/ai";
-import { safetySchema, SafetyResult } from "../schemas/safety.schema";
-import { safetyPrompt } from "../prompts/safety.prompt";
-import mockSafetyResult from "../dummy/mockSafetyResult.json";
-import { Logger } from "../lib/logger";
+import openai from "../lib/ai.js";
+import { safetySchema, SafetyResult } from "../schemas/safety.schema.js";
+import { safetyPrompt } from "../prompts/safety.prompt.js";
+import mockSafetyResult from "../dummy/mockSafetyResult.json" with { type: "json" };
+import { Logger } from "../lib/logger.js";
 
 export async function runSafetyAgent(userQuery: string, logger: Logger): Promise<SafetyResult> {
     if (process.env.USE_MOCK_ALL === "true" || process.env.USE_MOCK_SAFETY === "true") {

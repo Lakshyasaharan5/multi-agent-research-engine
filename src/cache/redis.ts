@@ -1,4 +1,5 @@
-import Redis from "ioredis";
+import { Redis } from "ioredis";
+import type { RedisOptions } from "ioredis";
 
 let redis: Redis | null = null;
 
@@ -10,34 +11,26 @@ export function initRedis(): void {
 
     if (redis) return;
 
-    redis = new Redis(process.env.REDIS_URL, {
+    const options: RedisOptions = {
         maxRetriesPerRequest: 0,
         enableOfflineQueue: false,
         retryStrategy: () => null,
         lazyConnect: false,
-    });
+    };
 
-    redis.on("connect", () => {
+    const client = new Redis(process.env.REDIS_URL, options);
+
+    client.on("connect", () => {
         console.log("Redis connected");
     });
 
-    redis.on("ready", () => {
-        console.log("Redis ready");
+    client.on("error", (err: Error) => {
+        console.error("Redis error", err);
     });
 
-    redis.on("error", (error) => {
-        console.warn("Redis unavailable:", error.message);
-    });
-
-    redis.on("close", () => {
-        console.warn("Redis connection closed");
-    });
-
-    redis.on("end", () => {
-        console.warn("Redis connection ended");
-    });
+    redis = client;
 }
 
-export function getRedisClient(): Redis | null {
+export function getRedis(): Redis | null {
     return redis;
 }

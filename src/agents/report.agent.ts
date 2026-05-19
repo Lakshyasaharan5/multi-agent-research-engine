@@ -1,9 +1,9 @@
 import { generateText, Output } from "ai";
-import openai from "../lib/ai";
-import { reportPrompt } from "../prompts/report.prompt";
-import { reportSchema, type ReportResult } from "../schemas/report.schema";
-import mockReportResult from "../dummy/mockReportResult.json";
-import { Logger } from "../lib/logger";
+import openai from "../lib/ai.js";
+import { reportPrompt } from "../prompts/report.prompt.js";
+import { reportSchema, type ReportResult } from "../schemas/report.schema.js";
+import mockReportResult from "../dummy/mockReportResult.json" with { type: "json" };
+import { Logger } from "../lib/logger.js";
 
 export async function runReportAgent(
     input: {

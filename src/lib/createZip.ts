@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { EngineState } from "../schemas/state.schema";
+import type { EngineState } from "../schemas/state.schema.js";
 
 type CreateResearchZipInput = {
     state: EngineState;

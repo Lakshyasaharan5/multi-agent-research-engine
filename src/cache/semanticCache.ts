@@ -1,8 +1,8 @@
 import { cosineSimilarity, embed } from "ai";
-import openai from "../lib/ai";
-import { getRedisClient } from "./redis";
-import type { EngineState } from "../schemas/state.schema";
-import { Logger } from "../lib/logger";
+import openai from "../lib/ai.js";
+import { getRedis } from "./redis.js";
+import type { EngineState } from "../schemas/state.schema.js";
+import { Logger } from "../lib/logger.js";
 
 type SemanticCacheEntry = {
     id: string;
@@ -35,7 +35,7 @@ export class SemanticCache {
     }
 
     async findSimilar(query: string): Promise<SemanticCacheHit | null> {
-        const redis = getRedisClient();
+        const redis = getRedis();
 
         if (!redis) {
             return null;
@@ -84,7 +84,7 @@ export class SemanticCache {
     }
 
     async set(query: string, state: EngineState): Promise<void> {
-        const redis = getRedisClient();
+        const redis = getRedis();
 
         if (!redis) {
             return;
@@ -118,7 +118,7 @@ export class SemanticCache {
     }
 
     async clear(): Promise<void> {
-        const redis = getRedisClient();
+        const redis = getRedis();
 
         if (!redis) {
             return;
@@ -128,7 +128,7 @@ export class SemanticCache {
             const ids = await redis.lrange(this.indexKey, 0, -1);
 
             if (ids.length > 0) {
-                await redis.del(...ids.map((id) => `semantic-cache:entry:${id}`));
+                await redis.del(...ids.map((id: any) => `semantic-cache:entry:${id}`));
             }
 
             await redis.del(this.indexKey);

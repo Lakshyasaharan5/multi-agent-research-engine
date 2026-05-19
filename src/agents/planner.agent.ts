@@ -1,9 +1,9 @@
 import { generateText, Output } from "ai";
-import { plannerPrompt } from "../prompts/planner.prompt";
-import { plannerSchema, PlannerResult } from "../schemas/planner.schema";
-import openai from "../lib/ai";
-import mockPlannerResult from "../dummy/mockPlannerResult.json";
-import { Logger } from "../lib/logger";
+import { plannerPrompt } from "../prompts/planner.prompt.js";
+import { plannerSchema, PlannerResult } from "../schemas/planner.schema.js";
+import openai from "../lib/ai.js";
+import mockPlannerResult from "../dummy/mockPlannerResult.json" with { type: "json" };
+import { Logger } from "../lib/logger.js";
 
 export async function runPlannerAgent(
     input: {

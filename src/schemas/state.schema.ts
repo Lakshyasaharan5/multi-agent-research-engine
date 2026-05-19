@@ -1,7 +1,7 @@
-import type { SafetyResult } from "./safety.schema";
-import type { PlannerResult } from "./planner.schema";
-import type { ResearchResult } from "./research.schema";
-import type { ReportResult } from "./report.schema";
+import type { SafetyResult } from "./safety.schema.js";
+import type { PlannerResult } from "./planner.schema.js";
+import type { ResearchResult } from "./research.schema.js";
+import type { ReportResult } from "./report.schema.js";
 
 export type EngineStep =
     | "safety"

@@ -1,9 +1,9 @@
 import { generateText, Output, stepCountIs } from "ai";
-import openai from "../lib/ai";
-import { researchPrompt } from "../prompts/research.prompt";
-import { researchSchema, type ResearchResult } from "../schemas/research.schema";
-import mockResearchResult from "../dummy/mockResearchResult.json";
-import { Logger } from "../lib/logger";
+import openai from "../lib/ai.js";
+import { researchPrompt } from "../prompts/research.prompt.js";
+import { researchSchema, type ResearchResult } from "../schemas/research.schema.js";
+import mockResearchResult from "../dummy/mockResearchResult.json" with { type: "json" };
+import { Logger } from "../lib/logger.js";
 
 export async function runResearchAgent(tasks: string[], logger: Logger): Promise<ResearchResult> {
     if (process.env.USE_MOCK_ALL === "true" || process.env.USE_MOCK_RESEARCH === "true") {

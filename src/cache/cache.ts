@@ -1,5 +1,5 @@
-import { getRedisClient } from "./redis";
-import { Logger } from "../lib/logger";
+import { getRedis } from "./redis.js";
+import { Logger } from "../lib/logger.js";
 
 export class Cache {
     private readonly ttlMs = Number(process.env.CACHE_TTL_MS) || 24 * 60 * 60 * 1000;
@@ -7,7 +7,7 @@ export class Cache {
     constructor(private readonly logger: Logger) {}
 
     async get<T>(key: string): Promise<T | null> {
-        const redis = getRedisClient();
+        const redis = getRedis();
         if (!redis) return null;
 
         try {
@@ -20,7 +20,7 @@ export class Cache {
     }
 
     async set<T>(key: string, value: T): Promise<void> {
-        const redis = getRedisClient();
+        const redis = getRedis();
         if (!redis) return;
 
         try {
@@ -32,7 +32,7 @@ export class Cache {
     }
 
     async delete(key: string): Promise<void> {
-        const redis = getRedisClient();
+        const redis = getRedis();
         if (!redis) return;
 
         try {
@@ -43,7 +43,7 @@ export class Cache {
     }
 
     async clear(): Promise<void> {
-        const redis = getRedisClient();
+        const redis = getRedis();
         if (!redis) return;
 
         try {

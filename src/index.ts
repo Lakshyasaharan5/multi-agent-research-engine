@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
-import { runResearchEngine } from "./engine/runResearchEngine";
-import { createResearchZip } from "./lib/createZip";
-import { initRedis } from "./cache/redis";
+import { runResearchEngine } from "./engine/runResearchEngine.js";
+import { createResearchZip } from "./lib/createZip.js";
+import { initRedis } from "./cache/redis.js";
 
 initRedis();
 
