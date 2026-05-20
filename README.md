@@ -3,7 +3,7 @@
 
 ## Architecture
 
-<img src="./arch.png" width="50%">
+<img src="./assets/arch.png" width="50%">
 
 I have 4 agents working on user goal:
 
